@@ -7,12 +7,12 @@ namespace AIDE_Client.Models
 {
     public class Process
     {
-        public string Name { get; set; }
+        public string ProcessName { get; set; }
 
         public int PID { get; set; }
 
-        public bool RespondingState { get; set; }
+        public long PrivateMemorySize { get; set; }
 
-        public int Memory { get; set; }
+        public bool RespondingState { get; set; }
     }
 }
