@@ -76,12 +76,12 @@ namespace AIDE_Client.Controllers
 
         private void shutdown()
         {
-            //Process.Start("shutdown", " -s -t 00");
+            Process.Start("shutdown", " -s -t 00");
         }
 
         private void restart()
         {
-            //Process.Start("shutdown", " -r -t 00");
+            Process.Start("shutdown", " -r -t 00");
         }
 
         private void sleep()
