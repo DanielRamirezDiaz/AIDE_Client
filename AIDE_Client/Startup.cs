@@ -24,6 +24,14 @@ namespace AIDE_Client
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddCors(o => o.AddPolicy("AIDE_Policy", builder =>
+            {
+                builder.AllowAnyOrigin()
+                        .AllowCredentials()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
+            }));
+
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
         }
 
@@ -34,6 +42,8 @@ namespace AIDE_Client
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            app.UseCors("AIDE_Policy");
 
             app.UseMvc();
         }
