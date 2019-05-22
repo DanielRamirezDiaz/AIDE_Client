@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AIDE_Client.Controllers
@@ -52,6 +51,33 @@ namespace AIDE_Client.Controllers
                 return Ok();
             }
             catch(Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost("exec")]
+        public ActionResult ExecuteComand([FromBody] string[] command)
+        {
+            try
+            {
+                string result = "";
+
+                switch (command.Length)
+                {
+                    case 1:
+                        result = executeCommand(command[0]);
+                        break;
+                    case 2:
+                        result = executeCommand(command[0], command[1]);
+                        break;
+                    default:
+                        return StatusCode(400);
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
             {
                 return StatusCode(500, ex.Message);
             }
@@ -111,6 +137,51 @@ namespace AIDE_Client.Controllers
                 if (p.ProcessName.Equals("notepad"))
                     p.Kill();
             }
+        }
+
+        private string executeCommand(string fileName)
+        {
+            return executeCommand(fileName, "");
+        }
+
+        private string executeCommand(string fileName, string arguments)
+        {
+
+            Process process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = fileName,
+                    Arguments = arguments,
+                    RedirectStandardOutput = true
+                }
+            };
+
+            string output = "";
+
+            process.Start();
+
+            int times = 10;
+            int counter = 0;
+            int milisecondsToWait = 1000;
+            while (!process.HasExited & counter != times)
+            {
+                process.WaitForExit(milisecondsToWait);
+                counter++;
+            }
+
+            if (process.HasExited)
+                while (!process.StandardOutput.EndOfStream)
+                    output += $"{process.StandardOutput.ReadLine()}\n";
+            else
+            {
+                process.Kill();
+                output = $"Process has been terminated because it was taking too long. Time spent: {(float)(milisecondsToWait * times)/1000} seconds.";
+            }
+
+            process.Dispose();
+
+            return output;
         }
     }
 }
