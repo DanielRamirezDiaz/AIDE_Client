@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using AIDE_Client.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AIDE_Client.Controllers
@@ -57,23 +58,11 @@ namespace AIDE_Client.Controllers
         }
 
         [HttpPost("exec")]
-        public ActionResult ExecuteComand([FromBody] string[] command)
+        public ActionResult ExecuteComand([FromBody] Command command)
         {
             try
             {
-                string result = "";
-
-                switch (command.Length)
-                {
-                    case 1:
-                        result = executeCommand(command[0]);
-                        break;
-                    case 2:
-                        result = executeCommand(command[0], command[1]);
-                        break;
-                    default:
-                        return StatusCode(400);
-                }
+                string result = executeCommand(command);
 
                 return Ok(result);
             }
@@ -91,7 +80,7 @@ namespace AIDE_Client.Controllers
 
             List<Models.Process> goodList = new List<Models.Process>();
 
-            foreach(Process p in badList)
+            foreach(System.Diagnostics.Process p in badList)
             {
                 var name = p.ProcessName;
                 //if (name.Equals("update.exe"))
@@ -130,45 +119,50 @@ namespace AIDE_Client.Controllers
 
         private void killNotepad()
         {
-            var badList = Process.GetProcesses();
+            var badList = System.Diagnostics.Process.GetProcesses();
 
-            foreach (Process p in badList)
+            foreach (System.Diagnostics.Process p in badList)
             {
                 if (p.ProcessName.Equals("notepad"))
                     p.Kill();
             }
         }
 
-        private string executeCommand(string fileName)
-        {
-            return executeCommand(fileName, "");
-        }
-
-        private string executeCommand(string fileName, string arguments)
+        private string executeCommand(Command command)
         {
 
-            Process process = new Process
+            System.Diagnostics.Process process = new System.Diagnostics.Process
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = fileName,
-                    Arguments = arguments,
+                    FileName = command.FileName,
+                    Arguments = command.Arguments,
                     RedirectStandardOutput = true
                 }
             };
 
-            string output = "";
+            int times, timeBetweenChecks;
+            int counter = 0;
+
+            if (command.Times > 0)
+                times = command.Times;
+            else
+                times = 10;
+
+            if (command.TimeBetweenChecks > 0)
+                timeBetweenChecks = command.TimeBetweenChecks;
+            else
+                timeBetweenChecks = 1000;
 
             process.Start();
 
-            int times = 10;
-            int counter = 0;
-            int milisecondsToWait = 1000;
             while (!process.HasExited & counter != times)
             {
-                process.WaitForExit(milisecondsToWait);
+                process.WaitForExit(timeBetweenChecks);
                 counter++;
             }
+
+            string output = "";
 
             if (process.HasExited)
                 while (!process.StandardOutput.EndOfStream)
@@ -176,7 +170,7 @@ namespace AIDE_Client.Controllers
             else
             {
                 process.Kill();
-                output = $"Process has been terminated because it was taking too long. Time spent: {(float)(milisecondsToWait * times)/1000} seconds.";
+                output = $"Process has been terminated because it was taking too long. Time spent: {(float)(timeBetweenChecks * times)/1000} seconds.";
             }
 
             process.Dispose();
